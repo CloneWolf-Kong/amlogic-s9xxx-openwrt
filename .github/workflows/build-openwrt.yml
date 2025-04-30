@@ -339,7 +339,7 @@ jobs:
         run: |
           if [[ -f "${FEEDS_CONF}" ]]; then
             cp -f ${FEEDS_CONF} openwrt/feeds.conf.default
-            #cp -f ${FEEDS_CONF} openwrt/feeds.conf
+            cp -f ${FEEDS_CONF} openwrt/feeds.conf
           fi
           chmod +x ${DIY_P1_SH}
           cd openwrt/
