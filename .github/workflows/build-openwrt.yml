@@ -231,7 +231,7 @@ on:
           - yourname
 
 env:
-  FEEDS_CONF: config/${{ inputs.source_branch }}/feeds.conf.default
+  FEEDS_CONF: config/${{ inputs.source_branch }}/feeds.conf
   CONFIG_FILE: config/${{ inputs.source_branch }}/config
   DIY_P1_SH: config/${{ inputs.source_branch }}/diy-part1.sh
   DIY_P2_SH: config/${{ inputs.source_branch }}/diy-part2.sh
@@ -251,6 +251,9 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
+        
+          echo "编译${{ inputs.source_branch }}【${GITHUB_REF##*/}】开始。。。"
+          echo "当前工作目录：${GITHUB_WORKSPACE}"
           docker rmi $(docker images -q) 2>/dev/null
           [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
           sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android 2>/dev/null
@@ -302,7 +305,11 @@ jobs:
               TAGS_NAME="lede"
           elif [[ "${{ inputs.source_branch }}" == *"immortalwrt"* ]]; then
               REPO_URL="https://github.com/immortalwrt/immortalwrt"
-              REPO_BRANCH="master"
+              if [[ "${GITHUB_REF##*/}" == "main" ]]; then
+                  REPO_BRANCH="master"
+              else
+                  REPO_BRANCH="${GITHUB_REF##*/}"
+              fi
               TAGS_NAME="immortalwrt"
           else
               echo "Unknown source code repository."
@@ -311,11 +318,17 @@ jobs:
 
           # Clone source code
           git clone -q --single-branch --depth=1 --branch=${REPO_BRANCH} ${REPO_URL} openwrt
+          
+          sudo -E apt-get -y install tree
+          echo "项目的目录结构："
+          ##tree -L 3 /home/runner/work/_actions/${GITHUB_REPOSITORY}
+          tree -L 3 /home/runner/work/_actions
+
           ln -sf /builder/openwrt ${GITHUB_WORKSPACE}/openwrt
           ln -sf /builder/openwrt /home/runner/work/_actions/ophub/amlogic-s9xxx-openwrt/main/openwrt
 
           # Set output information
-          echo "build_tag=OpenWrt_${TAGS_NAME}_${{ inputs.openwrt_storage }}_$(date +"%Y.%m")" >> ${GITHUB_OUTPUT}
+          echo "build_tag=OpenWrt_${TAGS_NAME}_${{ inputs.openwrt_storage }}[${GITHUB_REF##*/}]_$(date +"%Y.%m")" >> ${GITHUB_OUTPUT}
           echo -e "REPO_URL: [ ${REPO_URL} ]\nREPO_BRANCH: [ ${REPO_BRANCH} ]\nTAGS_NAME: [ ${TAGS_NAME} ]"
           df -hT ${PWD}
           echo "REPO_URL=${REPO_URL}" >> ${GITHUB_OUTPUT}
@@ -324,7 +337,10 @@ jobs:
 
       - name: Load custom feeds
         run: |
-          [[ -f "${FEEDS_CONF}" ]] && cp -f ${FEEDS_CONF} openwrt/feeds.conf.default
+          if [[ -f "${FEEDS_CONF}" ]]; then
+            cp -f ${FEEDS_CONF} openwrt/feeds.conf.default
+            #cp -f ${FEEDS_CONF} openwrt/feeds.conf
+          fi
           chmod +x ${DIY_P1_SH}
           cd openwrt/
           ${GITHUB_WORKSPACE}/${DIY_P1_SH}
