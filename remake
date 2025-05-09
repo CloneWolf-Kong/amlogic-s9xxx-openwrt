@@ -859,8 +859,8 @@ replace_kernel() {
     # 03. For /lib/modules/${kernel_name}
      tar -mxzf ${kernel_modules} -C ${tag_rootfs}/lib/modules
      echo -e "   [-] 内核模块目录结构: \n $(tree -L 1 ${tag_rootfs}/lib/modules || true)"
-     (cd ${tag_rootfs}/lib/modules/${kernel_name}/ && rm -f build source *.ko 2>/dev/null && find ./ -type f -name '*.ko' -exec ln -s {} ./ \;)
-    [[ "$(ls ${tag_rootfs}/lib/modules/${kernel_name} -l 2>/dev/null | grep "^d" | wc -l)" -eq "1" ]] || error_msg "/usr/lib/modules kernel folder is missing."
+     (cd ${tag_rootfs}/lib/modules/${boot_name}/ && rm -f build source *.ko 2>/dev/null && find ./ -type f -name '*.ko' -exec ln -s {} ./ \;)
+    [[ "$(ls ${tag_rootfs}/lib/modules/${boot_name} -l 2>/dev/null | grep "^d" | wc -l)" -eq "1" ]] || error_msg "/usr/lib/modules kernel folder is missing."
 }
 
 refactor_bootfs() {
